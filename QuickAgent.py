@@ -26,26 +26,31 @@ from deepgram import (
     Microphone,
 )
 
+# Load environment variables from .env file
 load_dotenv()
 
 class LanguageModelProcessor:
     def __init__(self):
+        # Initialize the language model with specified parameters
         self.llm = ChatGroq(temperature=0, model_name="mixtral-8x7b-32768", groq_api_key=os.getenv("GROQ_API_KEY"))
         # self.llm = ChatOpenAI(temperature=0, model_name="gpt-4-0125-preview", openai_api_key=os.getenv("OPENAI_API_KEY"))
         # self.llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0125", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
+        # Initialize memory for storing conversation history
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
         # Load the system prompt from a file
         with open('system_prompt.txt', 'r') as file:
             system_prompt = file.read().strip()
         
+        # Define the chat prompt template
         self.prompt = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_prompt),
             MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{text}")
         ])
 
+        # Initialize the conversation chain
         self.conversation = LLMChain(
             llm=self.llm,
             prompt=self.prompt,
@@ -53,31 +58,35 @@ class LanguageModelProcessor:
         )
 
     def process(self, text):
-        self.memory.chat_memory.add_user_message(text)  # Add user message to memory
+        # Add user message to memory
+        self.memory.chat_memory.add_user_message(text)
 
         start_time = time.time()
 
-        # Go get the response from the LLM
+        # Get response from the language model
         response = self.conversation.invoke({"text": text})
         end_time = time.time()
 
-        self.memory.chat_memory.add_ai_message(response['text'])  # Add AI response to memory
+        # Add AI response to memory
+        self.memory.chat_memory.add_ai_message(response['text'])
 
         elapsed_time = int((end_time - start_time) * 1000)
         print(f"LLM ({elapsed_time}ms): {response['text']}")
         return response['text']
 
 class TextToSpeech:
-    # Set your Deepgram API Key and desired voice model
+    # Set Deepgram API Key and desired voice model
     DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
     MODEL_NAME = "aura-helios-en"  # Example model name, change as needed
 
     @staticmethod
     def is_installed(lib_name: str) -> bool:
+        # Check if a library is installed
         lib = shutil.which(lib_name)
         return lib is not None
 
     def speak(self, text):
+        # Ensure ffplay is installed for audio playback
         if not self.is_installed("ffplay"):
             raise ValueError("ffplay not found, necessary to stream audio.")
 
@@ -120,12 +129,15 @@ class TranscriptCollector:
         self.reset()
 
     def reset(self):
+        # Reset the transcript parts
         self.transcript_parts = []
 
     def add_part(self, part):
+        # Add a part of the transcript
         self.transcript_parts.append(part)
 
     def get_full_transcript(self):
+        # Get the full transcript by joining all parts
         return ' '.join(self.transcript_parts)
 
 transcript_collector = TranscriptCollector()
@@ -135,6 +147,7 @@ async def get_transcript(callback):
 
     try:
         # example of setting up a client config. logging values: WARNING, VERBOSE, DEBUG, SPAM
+        # Set up Deepgram client configuration
         config = DeepgramClientOptions(options={"keepalive": "true"})
         deepgram: DeepgramClient = DeepgramClient("", config)
 
