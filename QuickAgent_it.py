@@ -80,7 +80,7 @@ class LanguageModelProcessor:
 class TextToSpeech:
     # Set Deepgram API Key and desired voice model
     DG_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-    MODEL_NAME = "aura-helios-en"  # Example model name, change as needed
+    MODEL_NAME = "aura-perseus-en"  # Example model name, change as needed
 
     @staticmethod
     def is_installed(lib_name: str) -> bool:
@@ -179,7 +179,7 @@ async def get_transcript(callback):
         options = LiveOptions(
             model="nova-2",
             punctuate=True,
-            language="en-US",
+            language="it",
             encoding="linear16",
             channels=1,
             sample_rate=16000,
